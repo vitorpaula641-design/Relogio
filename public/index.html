@@ -1,0 +1,1037 @@
+<!doctype html>
+
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+
+<title>Localizador</title>
+
+<!-- Leaflet -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+
+/* =========================
+   CABEÇALHO
+========================= */
+
+header {
+  background: white;
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+
+/* =========================
+   ABAS
+========================= */
+
+.tabs {
+
+  display: flex;
+
+  background: white;
+
+  border-bottom: 1px solid #ddd;
+}
+
+.tab {
+
+  flex: 1;
+
+  padding: 16px;
+
+  border: 0;
+
+  background: white;
+
+  font-size: 16px;
+
+  cursor: pointer;
+}
+
+.tab.active {
+
+  color: #1a73e8;
+
+  border-bottom: 3px solid #1a73e8;
+
+  font-weight: bold;
+}
+
+
+/* =========================
+   CONTEÚDO
+========================= */
+
+.page {
+
+  display: none;
+
+  padding: 25px;
+
+  max-width: 500px;
+
+  margin: auto;
+}
+
+.page.active {
+  display: block;
+}
+
+
+.card {
+
+  background: white;
+
+  padding: 25px;
+
+  border-radius: 15px;
+
+  box-shadow:
+    0 2px 10px rgba(0,0,0,.1);
+}
+
+
+h2 {
+  margin-top: 0;
+}
+
+
+input {
+
+  width: 100%;
+
+  padding: 14px;
+
+  margin-top: 10px;
+  margin-bottom: 15px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 9px;
+
+  font-size: 16px;
+}
+
+
+button.main {
+
+  width: 100%;
+
+  padding: 15px;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  background: #1a73e8;
+
+  color: white;
+
+  font-size: 17px;
+
+  cursor: pointer;
+}
+
+
+button.stop {
+
+  margin-top: 10px;
+
+  background: #d93025;
+}
+
+
+.status {
+
+  margin-top: 15px;
+
+  padding: 12px;
+
+  border-radius: 8px;
+
+  background: #f1f3f4;
+
+  line-height: 1.5;
+}
+
+
+/* =========================
+   MAPA
+========================= */
+
+#map {
+
+  display: none;
+
+  width: 100%;
+
+  height: calc(100vh - 124px);
+}
+
+
+.map-info {
+
+  position: fixed;
+
+  z-index: 1000;
+
+  top: 140px;
+
+  left: 15px;
+
+  right: 15px;
+
+  background: white;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 2px 10px rgba(0,0,0,.2);
+}
+
+
+/* Marcador azul */
+
+.blue-marker {
+
+  width: 22px;
+  height: 22px;
+
+  background: #1a73e8;
+
+  border: 4px solid white;
+
+  border-radius: 50%;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<h1>📍 Localizador</h1>
+
+</header>
+
+
+<!-- =========================
+     ABAS
+========================= -->
+
+<div class="tabs">
+
+<button
+  class="tab active"
+  onclick="mostrarAba('compartilhar', this)"
+>
+📍 Compartilhar
+</button>
+
+<button
+  class="tab"
+  onclick="mostrarAba('localizar', this)"
+>
+🔎 Localizar
+</button>
+
+</div>
+
+
+<!-- =========================
+     COMPARTILHAR
+========================= -->
+
+<section
+  id="compartilhar"
+  class="page active"
+>
+
+<div class="card">
+
+<h2>📍 Compartilhar localização</h2>
+
+<p>
+Digite seu nome e crie uma senha.
+Depois, autorize o navegador a acessar
+sua localização.
+</p>
+
+<input
+  id="shareName"
+  type="text"
+  placeholder="Seu nome"
+>
+
+<input
+  id="sharePassword"
+  type="password"
+  placeholder="Sua senha"
+>
+
+<button
+  class="main"
+  onclick="iniciarCompartilhamento()"
+>
+Começar a compartilhar
+</button>
+
+<button
+  id="stopButton"
+  class="main stop"
+  onclick="pararCompartilhamento()"
+  style="display:none"
+>
+Parar compartilhamento
+</button>
+
+<div
+  id="shareStatus"
+  class="status"
+>
+A localização só será enviada depois da sua autorização.
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     LOCALIZAR
+========================= -->
+
+<section
+  id="localizar"
+  class="page"
+>
+
+<div class="card">
+
+<h2>🔎 Localizar pessoa</h2>
+
+<p>
+Digite o nome e a senha da pessoa
+que compartilhou a localização.
+</p>
+
+<input
+  id="findName"
+  type="text"
+  placeholder="Nome"
+>
+
+<input
+  id="findPassword"
+  type="password"
+  placeholder="Senha"
+>
+
+<button
+  class="main"
+  onclick="localizarPessoa()"
+>
+Localizar
+</button>
+
+<div
+  id="findStatus"
+  class="status"
+>
+Digite os dados para localizar.
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     MAPA
+========================= -->
+
+<div id="map"></div>
+
+<div
+  id="mapInfo"
+  class="map-info"
+  style="display:none"
+></div>
+
+
+<!-- Leaflet -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+<script>
+
+let watchId = null;
+
+let shareName = "";
+let sharePassword = "";
+
+let map = null;
+let marker = null;
+let accuracyCircle = null;
+
+let findingName = "";
+let findingPassword = "";
+
+
+// =========================
+// TROCAR ABA
+// =========================
+
+function mostrarAba(nome, botao) {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(p => p.classList.remove("active"));
+
+  document
+    .querySelectorAll(".tab")
+    .forEach(b => b.classList.remove("active"));
+
+  document
+    .getElementById(nome)
+    .classList.add("active");
+
+  botao.classList.add("active");
+
+  document.getElementById("map").style.display = "none";
+
+  document.getElementById("mapInfo").style.display = "none";
+}
+
+
+// =========================
+// INICIAR COMPARTILHAMENTO
+// =========================
+
+async function iniciarCompartilhamento() {
+
+  const name =
+    document.getElementById("shareName")
+      .value.trim();
+
+  const password =
+    document.getElementById("sharePassword")
+      .value;
+
+  const status =
+    document.getElementById("shareStatus");
+
+
+  if (name.length < 3) {
+
+    status.textContent =
+      "Digite um nome com pelo menos 3 caracteres.";
+
+    return;
+  }
+
+
+  if (password.length < 4) {
+
+    status.textContent =
+      "A senha precisa ter pelo menos 4 caracteres.";
+
+    return;
+  }
+
+
+  if (!navigator.geolocation) {
+
+    status.textContent =
+      "Seu navegador não oferece geolocalização.";
+
+    return;
+  }
+
+
+  shareName = name;
+  sharePassword = password;
+
+
+  status.textContent =
+    "Verificando cadastro...";
+
+
+  // Primeiro tenta criar a conta
+  const register = await fetch(
+    "/api/register",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        name,
+        password
+      })
+    }
+  );
+
+
+  // Se já existe, tudo bem.
+  // Se criou, também tudo bem.
+
+  if (
+    !register.ok &&
+    register.status !== 409
+  ) {
+
+    const data = await register.json();
+
+    status.textContent =
+      data.error || "Erro ao criar usuário.";
+
+    return;
+  }
+
+
+  status.textContent =
+    "Aguardando sua permissão para usar o GPS...";
+
+
+  // =========================
+  // GPS
+  // =========================
+
+  watchId =
+    navigator.geolocation.watchPosition(
+
+      async position => {
+
+        const data = {
+
+          latitude:
+            position.coords.latitude,
+
+          longitude:
+            position.coords.longitude,
+
+          accuracy:
+            position.coords.accuracy,
+
+          timestamp:
+            new Date().toISOString(),
+
+          name: shareName,
+
+          password: sharePassword
+
+        };
+
+
+        try {
+
+          const response =
+            await fetch(
+              "/api/location",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+
+                body:
+                  JSON.stringify(data)
+              }
+            );
+
+
+          if (!response.ok) {
+
+            status.textContent =
+              "Erro ao enviar localização.";
+
+            return;
+          }
+
+
+          status.innerHTML =
+            "🟢 <b>Localização sendo compartilhada.</b><br>" +
+            "Precisão: " +
+            Math.round(data.accuracy) +
+            " metros";
+
+
+          document
+            .getElementById("stopButton")
+            .style.display = "block";
+
+        }
+
+        catch (error) {
+
+          status.textContent =
+            "Erro de conexão com o servidor.";
+
+        }
+
+      },
+
+
+      error => {
+
+        if (error.code === 1) {
+
+          status.textContent =
+            "❌ Você não autorizou a localização.";
+
+        }
+
+        else {
+
+          status.textContent =
+            "❌ Não foi possível obter sua localização.";
+
+        }
+
+      },
+
+
+      {
+        enableHighAccuracy: true,
+
+        maximumAge: 5000,
+
+        timeout: 15000
+      }
+    );
+}
+
+
+// =========================
+// PARAR
+// =========================
+
+async function pararCompartilhamento() {
+
+  if (watchId !== null) {
+
+    navigator.geolocation.clearWatch(
+      watchId
+    );
+
+    watchId = null;
+  }
+
+
+  await fetch(
+    "/api/location/stop",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type":
+          "application/json"
+      },
+
+      body: JSON.stringify({
+        name: shareName,
+        password: sharePassword
+      })
+    }
+  );
+
+
+  document
+    .getElementById("shareStatus")
+    .textContent =
+      "🔴 Compartilhamento parado.";
+
+
+  document
+    .getElementById("stopButton")
+    .style.display = "none";
+}
+
+
+// =========================
+// LOCALIZAR
+// =========================
+
+async function localizarPessoa() {
+
+  const name =
+    document.getElementById("findName")
+      .value.trim();
+
+  const password =
+    document.getElementById("findPassword")
+      .value;
+
+  const status =
+    document.getElementById("findStatus");
+
+
+  if (!name || !password) {
+
+    status.textContent =
+      "Digite o nome e a senha.";
+
+    return;
+  }
+
+
+  findingName = name;
+  findingPassword = password;
+
+
+  status.textContent =
+    "Procurando localização...";
+
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/find",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            name,
+            password
+          })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      status.textContent =
+        "❌ " +
+        (data.error ||
+        "Não foi possível localizar.");
+
+      return;
+    }
+
+
+    abrirMapa(data);
+
+
+  }
+
+  catch (error) {
+
+    status.textContent =
+      "❌ Erro de conexão com o servidor.";
+
+  }
+}
+
+
+// =========================
+// ABRIR MAPA
+// =========================
+
+function abrirMapa(data) {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(p =>
+      p.classList.remove("active")
+    );
+
+
+  document.getElementById("map")
+    .style.display = "block";
+
+
+  document.getElementById("mapInfo")
+    .style.display = "block";
+
+
+  const latitude =
+    data.location.latitude;
+
+  const longitude =
+    data.location.longitude;
+
+  const accuracy =
+    data.location.accuracy;
+
+
+  // Cria mapa somente uma vez
+
+  if (!map) {
+
+    map = L.map("map")
+      .setView(
+        [latitude, longitude],
+        17
+      );
+
+
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 19,
+
+        attribution:
+          "&copy; OpenStreetMap"
+      }
+    ).addTo(map);
+
+  }
+
+  else {
+
+    map.setView(
+      [latitude, longitude],
+      17
+    );
+
+  }
+
+
+  // =========================
+  // MARCADOR
+  // =========================
+
+  const blueIcon =
+    L.divIcon({
+
+      className: "",
+
+      html:
+        '<div class="blue-marker"></div>',
+
+      iconSize: [22, 22],
+
+      iconAnchor: [11, 11]
+
+    });
+
+
+  if (marker) {
+
+    marker.setLatLng([
+      latitude,
+      longitude
+    ]);
+
+  }
+
+  else {
+
+    marker =
+      L.marker(
+        [
+          latitude,
+          longitude
+        ],
+        {
+          icon: blueIcon
+        }
+      )
+      .addTo(map);
+
+  }
+
+
+  // =========================
+  // PRECISÃO
+  // =========================
+
+  if (accuracyCircle) {
+
+    accuracyCircle
+      .setLatLng([
+        latitude,
+        longitude
+      ])
+      .setRadius(accuracy || 0);
+
+  }
+
+  else {
+
+    accuracyCircle =
+      L.circle(
+        [
+          latitude,
+          longitude
+        ],
+        {
+          radius:
+            accuracy || 0,
+
+          color: "#1a73e8",
+
+          fillColor:
+            "#1a73e8",
+
+          fillOpacity:
+            0.15,
+
+          weight: 2
+        }
+      )
+      .addTo(map);
+
+  }
+
+
+  // =========================
+  // INFORMAÇÕES
+  // =========================
+
+  document.getElementById("mapInfo")
+    .innerHTML =
+
+      "📍 <b>" +
+      data.name +
+      "</b><br>" +
+
+      (
+        data.sharing
+          ? "🟢 Compartilhando localização"
+          : "🟠 Última localização registrada"
+      ) +
+
+      "<br>" +
+
+      "Precisão: " +
+      (
+        accuracy
+          ? Math.round(accuracy) +
+            " metros"
+          : "desconhecida"
+      ) +
+
+      "<br>" +
+
+      "Atualizado: " +
+      new Date(
+        data.location.timestamp
+      ).toLocaleString("pt-BR");
+
+
+  // Atualiza automaticamente
+  // a cada 5 segundos
+
+  setTimeout(
+    atualizarLocalizacao,
+    5000
+  );
+}
+
+
+// =========================
+// ATUALIZAÇÃO AUTOMÁTICA
+// =========================
+
+async function atualizarLocalizacao() {
+
+  if (!findingName) {
+    return;
+  }
+
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/find",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            name: findingName,
+
+            password: findingPassword
+
+          })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (response.ok) {
+
+      abrirMapa(data);
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.log(
+      "Erro ao atualizar:",
+      error
+    );
+
+  }
+
+}
+
+</script>
+
+</body>
+
+</html>
