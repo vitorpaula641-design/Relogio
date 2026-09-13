@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de localização</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:700px;margin:30px auto;padding:20px}
+input,button{padding:12px;margin:5px 0}button{cursor:pointer}
+.item{padding:12px 0;border-bottom:1px solid #ddd}
+</style>
+</head>
+<body>
+<h1>Painel</h1>
+<p>Digite o token administrativo configurado no Render.</p>
+<input id="token" type="password" placeholder="ADMIN_TOKEN">
+<button onclick="loadLocations()">Ver localizações</button>
+<div id="result"></div>
+<script>
+async function loadLocations(){
+ const token=document.getElementById("token").value;
+ const result=document.getElementById("result");
+ result.textContent="Carregando...";
+ try{
+  const r=await fetch("/api/locations",{headers:{"Authorization":"Bearer "+token}});
+  const data=await r.json();
+  if(!r.ok){result.textContent=data.error||"Acesso negado.";return;}
+  result.innerHTML=data.length?data.slice().reverse().map(x=>`<div class="item"><b>Latitude:</b> ${x.latitude}<br><b>Longitude:</b> ${x.longitude}<br><b>Precisão:</b> ${x.accuracy??"não informada"} m<br><b>Data:</b> ${x.timestamp}</div>`).join(""):"<p>Nenhuma localização recebida.</p>";
+ }catch{result.textContent="Erro ao consultar o servidor.";}
+}
+</script>
+</body>
+</html>
